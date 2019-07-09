@@ -1,0 +1,16 @@
+{
+  "name": "polevaultweb/wp-oauth2",
+  "description": "WordPress library for connecting to services via oAuth from inside a WordPress plugin.",
+  "license": "GPL-2.0+",
+  "authors": [
+    {
+      "name": "Iain Poulson",
+      "homepage": "https://polevaultweb.com/"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Polevaultweb\\WPOAuth2\\": "src/"
+    }
+  }
+}
