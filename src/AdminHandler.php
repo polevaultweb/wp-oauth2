@@ -59,11 +59,11 @@ class AdminHandler {
 
 		WPOAuth2::disconnect( $provider );
 
-		$this->redirect( 'disconnection' );
+		$this->redirect( 'disconnection', $provider );
 	}
 
-	protected function redirect( $notice = null ) {
-		$url = add_query_arg( array( 'notice' => $notice ), $this->redirect );
+	protected function redirect( $notice = null, $provider = '' ) {
+		$url = add_query_arg( array( 'notice' => $notice, 'wp-oauth2' => $provider ), $this->redirect );
 		wp_redirect( $url );
 		exit;
 	}
@@ -120,7 +120,7 @@ class AdminHandler {
 		$error = filter_input( INPUT_GET, 'error' );
 		if ( $error ) {
 			// Show error notice
-			$this->redirect( 'error' );
+			$this->redirect( 'error', $provider );
 		}
 
 		$token = filter_input( INPUT_GET, 'token' );
@@ -133,13 +133,13 @@ class AdminHandler {
 		$key    = get_site_transient( 'wp-oauth2-key' );
 		$token  = openssl_decrypt( $token, $method, $key, 0, urldecode( $iv ) );
 		if ( empty( $token ) ) {
-			$this->redirect( 'error' );
+			$this->redirect( 'error', $provider );
 		}
 
 		$token = new AccessToken( $provider, $token );
 		$token->save();
 
-		$this->redirect( 'connection' );
+		$this->redirect( 'connection', $provider );
 	}
 
 	protected function get_provider_display_name() {
