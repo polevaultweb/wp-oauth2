@@ -26,7 +26,7 @@ class OAuth2Client {
 		return $key;
 	}
 
-	public function get_authorize_url( $callback_url,  $args = array() ) {
+	public function get_authorize_url( $callback_url, $args = array() ) {
 		$data = array(
 			'redirect'   => $callback_url,
 			'client_key' => $this->client_key,
