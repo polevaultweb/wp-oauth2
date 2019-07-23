@@ -26,7 +26,7 @@ class OAuth2Client {
 		return $key;
 	}
 
-	public function get_authorize_url( $callback_url ) {
+	public function get_authorize_url( $callback_url,  $args = array() ) {
 		$data = array(
 			'redirect'   => $callback_url,
 			'client_key' => $this->client_key,
@@ -34,12 +34,14 @@ class OAuth2Client {
 			'method'     => self::get_method(),
 		);
 
-		$args = array(
+		$defaults = array(
 			'response_type' => 'code',
 			'client_id'     => $this->client_key,
 			'redirect_uri'  => $this->redirect_uri,
 			'state'         => base64_encode( serialize( $data ) ),
 		);
+
+		$args = array_merge( $defaults, $args );
 
 		$url = $this->authorization_url . '?' . http_build_query( $args, '', '&' );
 
