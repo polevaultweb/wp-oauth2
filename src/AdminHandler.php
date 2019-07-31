@@ -4,15 +4,32 @@ namespace Polevaultweb\WPOAuth2;
 
 class AdminHandler {
 
+	/**
+	 * @var string
+	 */
 	protected $redirect;
+
+	/**
+	 * @var TokenManager
+	 */
+	protected $token_manager;
+
+	/**
+	 * @var string
+	 */
+	protected $openssl_encrypt_method;
 
 	/**
 	 * Admin_Handler constructor.
 	 *
-	 * @param $redirect
+	 * @param TokenManager $token_manager
+	 * @param string       $redirect
+	 * @param string       $openssl_encrypt_method
 	 */
-	public function __construct( $redirect ) {
-		$this->redirect = $redirect;
+	public function __construct( $token_manager, $redirect, $openssl_encrypt_method ) {
+		$this->token_manager          = $token_manager;
+		$this->redirect               = $redirect;
+		$this->openssl_encrypt_method = $openssl_encrypt_method;
 	}
 
 	public function init() {
@@ -57,7 +74,7 @@ class AdminHandler {
 			return;
 		}
 
-		WPOAuth2::disconnect( $provider );
+		$this->token_manager->remove_access_token( $provider );
 
 		$this->redirect( 'disconnection', $provider );
 	}
@@ -129,14 +146,20 @@ class AdminHandler {
 			$this->redirect( 'error' );
 		}
 
-		$method = OAuth2Client::get_method();
+		$method = $this->openssl_encrypt_method;
 		$key    = get_site_transient( 'wp-oauth2-key' );
 		$token  = openssl_decrypt( $token, $method, $key, 0, urldecode( $iv ) );
 		if ( empty( $token ) ) {
 			$this->redirect( 'error', $provider );
 		}
 
-		$token = new AccessToken( $provider, $token );
+		$refresh_token_data = filter_input( INPUT_GET, 'refresh_token' );
+		$refresh_token      = null;
+		if ( $refresh_token_data ) {
+			$refresh_token = openssl_decrypt( $refresh_token_data, $method, $key, 0, urldecode( $iv ) );
+		}
+
+		$token = new AccessToken( $provider, $token, $refresh_token );
 		$token->save();
 
 		$this->redirect( 'connection', $provider );
