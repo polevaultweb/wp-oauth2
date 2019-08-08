@@ -53,16 +53,18 @@ class WPOAuth2 {
 	}
 
 	public function get_authorize_url( $client_id, $callback_url, $args = array() ) {
-		$defaults = array(
+		$params = array(
 			'redirect_uri' => $callback_url,
 			'client_id'    => $client_id,
 			'key'          => $this->get_key(),
 			'method'       => $this->get_method(),
 		);
 
-		$args = array_merge( $defaults, $args );
+		if ( ! empty( $args ) ) {
+			$params['args'] = base64_encode( serialize( $args ) );
+		}
 
-		$url = $this->oauth_proxy_url . '?' . http_build_query( $args, '', '&' );
+		$url = $this->oauth_proxy_url . '?' . http_build_query( $params, '', '&' );
 
 		return $url;
 	}
