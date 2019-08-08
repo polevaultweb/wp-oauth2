@@ -27,7 +27,7 @@ class WPOAuth2 {
 	/**
 	 * @var TokenManager
 	 */
-	protected $token_manager;
+	public $token_manager;
 
 	/**
 	 * @param string $oauth_proxy_url
@@ -91,6 +91,10 @@ class WPOAuth2 {
 		$url = add_query_arg( array( 'wp-oauth2' => $provider, 'action' => 'disconnect' ), $url );
 
 		return $url;
+	}
+
+	public function disconnect( $provider ) {
+		$this->token_manager->remove_access_token( $provider );
 	}
 
 	public function is_authorized( $provider ) {
