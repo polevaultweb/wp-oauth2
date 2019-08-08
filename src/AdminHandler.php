@@ -159,7 +159,9 @@ class AdminHandler {
 			$refresh_token = openssl_decrypt( $refresh_token_data, $method, $key, 0, urldecode( $iv ) );
 		}
 
-		$token = new AccessToken( $provider, $token, $refresh_token );
+		$expires = filter_input( INPUT_GET, 'expires', FILTER_VALIDATE_INT );
+
+		$token = new AccessToken( $provider, $token, $refresh_token, $expires );
 		$token->save();
 
 		$this->redirect( 'connection', $provider );

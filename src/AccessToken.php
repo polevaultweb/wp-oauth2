@@ -22,19 +22,28 @@ class AccessToken {
 	const OPTION_KEY = 'wp-oauth2-tokens';
 
 	/**
+	 * @var int|null
+	 */
+	protected $expires;
+
+	/**
 	 * AccessToken constructor.
 	 *
 	 * @param string      $provider
 	 * @param null|string $token
 	 * @param null|string $refresh_token
+	 * @param null|int    $expires
 	 */
-	public function __construct( $provider, $token = null, $refresh_token = null ) {
+	public function __construct( $provider, $token = null, $refresh_token = null, $expires = null ) {
 		$this->provider = $provider;
 		if ( $token ) {
 			$this->token = $token;
 		}
 		if ( $refresh_token ) {
 			$this->refresh_token = $refresh_token;
+		}
+		if ( $expires ) {
+			$this->expires = $expires;
 		}
 	}
 
@@ -81,6 +90,9 @@ class AccessToken {
 		$data = array( 'token' => $this->token );
 		if ( ! empty( $this->refresh_token ) ) {
 			$data['refresh_token'] = $this->refresh_token;
+		}
+		if ( ! empty( $this->expires ) ) {
+			$data['expires'] = $this->expires;
 		}
 
 		$tokens[ $this->provider ] = $data;
