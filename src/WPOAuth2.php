@@ -15,30 +15,19 @@ class WPOAuth2 {
 	protected $oauth_proxy_url;
 
 	/**
-	 * @var
-	 */
-	protected $redirect_url;
-
-	/**
-	 * @var AdminHandler
-	 */
-	protected $admin_handler;
-
-	/**
 	 * @var TokenManager
 	 */
 	public $token_manager;
 
 	/**
 	 * @param string $oauth_proxy_url
-	 * @param string $redirect_url
 	 *
 	 * @return WPOAuth2 Instance
 	 */
-	public static function instance( $oauth_proxy_url, $redirect_url ) {
+	public static function instance( $oauth_proxy_url ) {
 		if ( ! isset( self::$instance ) && ! ( self::$instance instanceof WPOAuth2 ) ) {
 			self::$instance = new WPOAuth2();
-			self::$instance->init( $oauth_proxy_url, $redirect_url );
+			self::$instance->init( $oauth_proxy_url );
 		}
 
 		return self::$instance;
@@ -46,16 +35,21 @@ class WPOAuth2 {
 
 	/**
 	 * @param string $oauth_proxy_url
-	 * @param string $redirect_url
 	 */
-	public function init( $oauth_proxy_url, $redirect_url ) {
+	public function init( $oauth_proxy_url ) {
 		$this->oauth_proxy_url = $oauth_proxy_url;
-		$this->redirect_url    = $redirect_url;
 
 		$this->token_manager = new TokenManager();
+	}
 
-		$this->admin_handler = new AdminHandler( $this->token_manager, $redirect_url, $this->get_method() );
-		$this->admin_handler->init();
+	/**
+	 * Register the admin hooks for the plugin.
+	 *
+	 * @param string $redirect_url
+	 */
+	public function register_admin_handler( $redirect_url ) {
+		$admin_handler = new AdminHandler( $this->token_manager, $redirect_url, $this->get_method() );
+		$admin_handler->init();
 	}
 
 	public function get_authorize_url( $client_id, $callback_url, $args = array() ) {
