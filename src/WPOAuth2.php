@@ -109,7 +109,9 @@ class WPOAuth2 {
 			return false;
 		}
 
-		$this->token_manager->set_access_token( $provider, $data['token'], $refresh_token );
+		$expires = isset( $data['expires'] ) ? $data['expires'] : null;
+
+		$this->token_manager->set_access_token( $provider, $data['token'], $refresh_token, $expires );
 
 		return $data['token'];
 	}

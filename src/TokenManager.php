@@ -21,8 +21,8 @@ class TokenManager {
 		return $token->get( 'refresh_token' );
 	}
 
-	public function set_access_token( $provider, $token, $refresh_token = null ) {
-		$token = new AccessToken( $provider, $token, $refresh_token );
+	public function set_access_token( $provider, $token, $refresh_token = null, $expires = null ) {
+		$token = new AccessToken( $provider, $token, $refresh_token, $expires );
 		$token->save();
 	}
 }
