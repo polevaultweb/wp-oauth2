@@ -84,7 +84,7 @@ class WPOAuth2 {
 	 * @param string $client_id
 	 * @param string $provider
 	 *
-	 * @return bool
+	 * @return bool|string
 	 */
 	public function refresh_access_token( $client_id, $provider ) {
 		$refresh_token = $this->token_manager->get_refresh_token( $provider );
@@ -111,7 +111,7 @@ class WPOAuth2 {
 
 		$this->token_manager->set_access_token( $provider, $data['token'], $refresh_token );
 
-		return true;
+		return $data['token'];
 	}
 
 	public function get_method() {
