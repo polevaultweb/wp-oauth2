@@ -74,6 +74,10 @@ class AccessToken {
 		if ( isset( $tokens[ $this->provider ] ) ) {
 			$data = $tokens[ $this->provider ];
 
+			if ( empty( $type ) ) {
+				return $data;
+			}
+
 			if ( ! is_array( $data ) ) {
 				return $type == 'token' ? $data : false;
 			}

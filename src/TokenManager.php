@@ -9,10 +9,10 @@ class TokenManager {
 		$token->delete();
 	}
 
-	public function get_access_token( $provider ) {
+	public function get_access_token( $provider, $type = 'token' ) {
 		$token = new AccessToken( $provider );
 
-		return $token->get();
+		return $token->get( $type );
 	}
 
 	public function get_refresh_token( $provider ) {
