@@ -52,6 +52,15 @@ class WPOAuth2 {
 		$admin_handler->init();
 	}
 
+	/**
+	 * Get the URL to the proxy server to redirect to, to start the auth process.
+	 *
+	 * @param string  $client_id
+	 * @param  string $callback_url
+	 * @param array   $args
+	 *
+	 * @return string
+	 */
 	public function get_authorize_url( $client_id, $callback_url, $args = array() ) {
 		$params = array(
 			'redirect_uri' => $callback_url,
@@ -67,6 +76,42 @@ class WPOAuth2 {
 		$url = $this->oauth_proxy_url . '?' . http_build_query( $params, '', '&' );
 
 		return $url;
+	}
+
+	/**
+	 * Send a refresh token to the proxy server for a client and get a new access token back.
+	 *
+	 * @param string $client_id
+	 * @param string $provider
+	 *
+	 * @return bool
+	 */
+	public function refresh_access_token( $client_id, $provider ) {
+		$refresh_token = $this->token_manager->get_refresh_token( $provider );
+
+		$params = array(
+			'client_id'     => $client_id,
+			'refresh_token' => $refresh_token,
+		);
+
+		$url = $this->oauth_proxy_url . '/refresh?' . http_build_query( $params, '', '&' );
+
+		$request = wp_remote_get( $url );
+
+		if ( is_wp_error( $request ) ) {
+			return false; // Bail early
+		}
+
+		$body = wp_remote_retrieve_body( $request );
+
+		$data = json_decode( $body, true );
+		if ( ! $data || ! isset( $data['token'] ) ) {
+			return false;
+		}
+
+		$this->token_manager->set_access_token( $provider, $data['token'], $refresh_token );
+
+		return true;
 	}
 
 	public function get_method() {
