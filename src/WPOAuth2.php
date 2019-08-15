@@ -43,6 +43,13 @@ class WPOAuth2 {
 	}
 
 	/**
+	 * @return string
+	 */
+	public function get_oauth_proxy_url() {
+		return $this->oauth_proxy_url;
+	}
+
+	/**
 	 * Register the admin hooks for the plugin.
 	 *
 	 * @param string $redirect_url
