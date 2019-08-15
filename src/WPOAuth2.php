@@ -55,17 +55,18 @@ class WPOAuth2 {
 	/**
 	 * Get the URL to the proxy server to redirect to, to start the auth process.
 	 *
-	 * @param string  $client_id
-	 * @param  string $callback_url
-	 * @param array   $args
+	 * @param string $provider
+	 * @param string $client_id
+	 * @param string $callback_url
+	 * @param array  $args
 	 *
 	 * @return string
 	 */
-	public function get_authorize_url( $client_id, $callback_url, $args = array() ) {
+	public function get_authorize_url( $provider, $client_id, $callback_url, $args = array() ) {
 		$params = array(
 			'redirect_uri' => $callback_url,
 			'client_id'    => $client_id,
-			'key'          => $this->get_key(),
+			'key'          => $this->generate_key( $provider ),
 			'method'       => $this->get_method(),
 		);
 
@@ -122,10 +123,23 @@ class WPOAuth2 {
 		return $methods[0];
 	}
 
-	protected function get_key() {
+	/**
+	 * @param string $provider
+	 *
+	 * @return string
+	 */
+	protected function generate_key( $provider ) {
+		$keys = get_site_transient( 'wp-oauth2-key' );
+
+		if ( ! is_array( $keys ) ) {
+			$keys = array();
+		}
+
 		$key = wp_generate_password();
 
-		set_site_transient( 'wp-oauth2-key', $key );
+		$keys[ $provider ] = $key;
+
+		set_site_transient( 'wp-oauth2-key', $keys );
 
 		return $key;
 	}

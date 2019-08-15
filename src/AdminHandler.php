@@ -147,8 +147,12 @@ class AdminHandler {
 		}
 
 		$method = $this->openssl_encrypt_method;
-		$key    = get_site_transient( 'wp-oauth2-key' );
-		$token  = openssl_decrypt( $token, $method, $key, 0, urldecode( $iv ) );
+		$keys   = get_site_transient( 'wp-oauth2-key' );
+		if ( ! isset( $keys[ $provider ] ) ) {
+			$this->redirect( 'error', $provider );
+		}
+		$key   = $keys[ $provider ];
+		$token = openssl_decrypt( $token, $method, $key, 0, urldecode( $iv ) );
 		if ( empty( $token ) ) {
 			$this->redirect( 'error', $provider );
 		}
