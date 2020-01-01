@@ -173,8 +173,9 @@ class AdminHandler {
 
 	protected function get_provider_display_name() {
 		$provider = filter_input( INPUT_GET, 'wp-oauth2' );
+		$name = ucwords( str_replace( array( '_', '-' ), ' ', $provider ) );
 
-		return ucwords( str_replace( array( '_', '-' ), ' ', $provider ) );
+		return apply_filters( 'pvw_wp_oauth2_provider_display_name' , $name, $provider );
 	}
 
 	public function render_error_notice() {
@@ -182,20 +183,23 @@ class AdminHandler {
 
 		$error_description = filter_input( INPUT_GET, 'error_description' );
 		$message           = $error_description ? $error_description : __( 'An unknown error occurred.' );
-		printf( '<div class="error"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), $message );
+		$class = apply_filters( 'pvw_wp_oauth2_error_notice_class', 'error' );
+		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), $message );
 	}
 
 	public function render_connection_notice() {
 		$provider = $this->get_provider_display_name();
 
 		$message = sprintf( __( 'You have successfully connected with your %s account.' ), $provider );
-		printf( '<div class="updated"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connected' ), $message );
+		$class = apply_filters( 'pvw_wp_oauth2_connection_notice_class', 'updated' );
+		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connected' ), $message );
 	}
 
 	public function render_disconnection_notice() {
 		$provider = $this->get_provider_display_name();
 
 		$message = sprintf( __( 'You have successfully disconnected your %s account.' ), $provider );
-		printf( '<div class="updated"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Disconnected' ), $message );
+		$class = apply_filters( 'pvw_wp_oauth2_disconnection_notice_class', 'updated' );
+		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Disconnected' ), $message );
 	}
 }
