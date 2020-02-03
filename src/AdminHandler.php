@@ -163,10 +163,15 @@ class AdminHandler {
 			$refresh_token = openssl_decrypt( $refresh_token_data, $method, $key, 0, urldecode( $iv ) );
 		}
 
+		$values_data = filter_input( INPUT_GET, 'values' );
+		$values      = null;
+		if ( $values_data ) {
+			$values = openssl_decrypt( $values_data, $method, $key, 0, urldecode( $iv ) );
+		}
+
 		$expires = filter_input( INPUT_GET, 'expires', FILTER_VALIDATE_INT );
 
-		$token = new AccessToken( $provider, $token, $refresh_token, $expires );
-		$token->save();
+		$this->token_manager->set_access_token( $provider, $token, $refresh_token, $expires, $values );
 
 		$this->redirect( 'connection', $provider );
 	}
