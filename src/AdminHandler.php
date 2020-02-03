@@ -80,23 +80,27 @@ class AdminHandler {
 	}
 
 	protected function redirect( $notice = null, $provider = '' ) {
-		$url = add_query_arg( array( 'notice' => $notice, 'wp-oauth2' => $provider ), $this->redirect );
+		$url = add_query_arg( array(
+			'notice'    => $notice,
+			'wp-oauth2' => $provider,
+		), apply_filters( 'pvw_wp_oauth2_redirect_url', $this->redirect ) );
+
 		wp_redirect( $url );
 		exit;
 	}
 
 	protected function is_callback_page() {
-		$parts = parse_url( $this->redirect );
-
-		if ( ! isset( $parts['query'] ) ) {
-			// Check for full path? admin_url?
-		}
+		$parts = parse_url( apply_filters( 'pvw_wp_oauth2_is_callback_page_redirect_url', $this->redirect ) );
 
 		global $pagenow;
 		if ( ! isset( $pagenow ) ) {
 			return false;
 		}
 		if ( $pagenow !== basename( $parts['path'] ) ) {
+			return false;
+		}
+
+		if ( ! isset( $parts['query'] ) ) {
 			return false;
 		}
 
