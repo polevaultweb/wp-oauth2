@@ -2,50 +2,9 @@
 
 namespace Polevaultweb\WPOAuth2;
 
-class AccessToken {
-
-	/**
-	 * @var string
-	 */
-	protected $provider;
-
-	/**
-	 * @var null|string
-	 */
-	protected $token;
-
-	/**
-	 * @var null|string
-	 */
-	protected $refresh_token;
+class AccessToken extends AbstractAccessToken {
 
 	const OPTION_KEY = 'wp-oauth2-tokens';
-
-	/**
-	 * @var int|null
-	 */
-	protected $expires;
-
-	/**
-	 * AccessToken constructor.
-	 *
-	 * @param string      $provider
-	 * @param null|string $token
-	 * @param null|string $refresh_token
-	 * @param null|int    $expires
-	 */
-	public function __construct( $provider, $token = null, $refresh_token = null, $expires = null ) {
-		$this->provider = $provider;
-		if ( $token ) {
-			$this->token = $token;
-		}
-		if ( $refresh_token ) {
-			$this->refresh_token = $refresh_token;
-		}
-		if ( $expires ) {
-			$this->expires = $expires;
-		}
-	}
 
 	/**
 	 * @return array
@@ -61,6 +20,14 @@ class AccessToken {
 	 */
 	protected function save_tokens( $tokens ) {
 		return update_site_option( self::OPTION_KEY, $tokens );
+	}
+
+	public function get_token() {
+		return $this->get( 'token' );
+	}
+
+	public function get_refresh_token() {
+		return $this->get( 'refresh_token' );
 	}
 
 	/**
@@ -97,6 +64,9 @@ class AccessToken {
 		}
 		if ( ! empty( $this->expires ) ) {
 			$data['expires'] = $this->expires;
+		}
+		if ( ! empty( $this->values ) ) {
+			$data['values'] = $this->values;
 		}
 
 		$tokens[ $this->provider ] = $data;

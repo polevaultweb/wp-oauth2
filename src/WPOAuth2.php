@@ -20,26 +20,29 @@ class WPOAuth2 {
 	public $token_manager;
 
 	/**
-	 * @param string $oauth_proxy_url
+	 * @param string      $oauth_proxy_url
+	 *
+	 * @param null|string $token_class
 	 *
 	 * @return WPOAuth2 Instance
 	 */
-	public static function instance( $oauth_proxy_url ) {
+	public static function instance( $oauth_proxy_url, $token_class = null ) {
 		if ( ! isset( self::$instance ) && ! ( self::$instance instanceof WPOAuth2 ) ) {
 			self::$instance = new WPOAuth2();
-			self::$instance->init( $oauth_proxy_url );
+			self::$instance->init( $oauth_proxy_url, $token_class );
 		}
 
 		return self::$instance;
 	}
 
 	/**
-	 * @param string $oauth_proxy_url
+	 * @param string      $oauth_proxy_url
+	 * @param null|string $token_class
 	 */
-	public function init( $oauth_proxy_url ) {
+	public function init( $oauth_proxy_url, $token_class = null ) {
 		$this->oauth_proxy_url = $oauth_proxy_url;
 
-		$this->token_manager = new TokenManager();
+		$this->token_manager = new TokenManager( $token_class );
 	}
 
 	/**
@@ -89,8 +92,8 @@ class WPOAuth2 {
 	/**
 	 * Send a refresh token to the proxy server for a client and get a new access token back.
 	 *
-	 * @param string $client_id
-	 * @param string $provider
+	 * @param string      $client_id
+	 * @param string      $provider
 	 *
 	 * @return bool|string
 	 */
