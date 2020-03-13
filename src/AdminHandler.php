@@ -79,11 +79,18 @@ class AdminHandler {
 		$this->redirect( 'disconnection', $provider );
 	}
 
-	protected function redirect( $notice = null, $provider = '' ) {
-		$url = add_query_arg( array(
+	/**
+	 * @param null|string $notice
+	 * @param string      $provider
+	 * @param array       $args
+	 */
+	protected function redirect( $notice = null, $provider = '', $args = array() ) {
+		$args = array_merge( array(
 			'notice'    => $notice,
 			'wp-oauth2' => $provider,
-		), apply_filters( 'pvw_wp_oauth2_redirect_url', $this->redirect ) );
+		), $args );
+
+		$url = add_query_arg( $args, apply_filters( 'pvw_wp_oauth2_redirect_url', $this->redirect ) );
 
 		wp_redirect( $url );
 		exit;
@@ -140,8 +147,15 @@ class AdminHandler {
 
 		$error = filter_input( INPUT_GET, 'error' );
 		if ( $error ) {
+			$error_args = array( 'error' => $error );
 			// Show error notice
-			$this->redirect( 'error', $provider );
+			$error_desp = filter_input( INPUT_GET, 'error_description' );
+
+			if ( $error_desp ) {
+				$error_args['error_description'] = $error_desp;
+			}
+
+			$this->redirect( 'error', $provider, $error_args );
 		}
 
 		$token = filter_input( INPUT_GET, 'token' );
@@ -192,7 +206,9 @@ class AdminHandler {
 
 		$error_description = filter_input( INPUT_GET, 'error_description' );
 		$message           = $error_description ? $error_description : __( 'An unknown error occurred.' );
-		$class = apply_filters( 'pvw_wp_oauth2_error_notice_class', 'error' );
+		$message           = apply_filters( 'pvw_wp_oauth2_error_notice_message', $message, $provider );
+		$class             = apply_filters( 'pvw_wp_oauth2_error_notice_class', 'error', $provider );
+
 		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), $message );
 	}
 
