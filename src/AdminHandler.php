@@ -209,7 +209,7 @@ class AdminHandler {
 		$message           = apply_filters( 'pvw_wp_oauth2_error_notice_message', $message, $provider );
 		$class             = apply_filters( 'pvw_wp_oauth2_error_notice_class', 'error', $provider );
 
-		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), $message );
+		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), esc_html( $message ) );
 	}
 
 	public function render_connection_notice() {
