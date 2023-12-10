@@ -155,9 +155,7 @@ class WPOAuth2 {
 	}
 
 	public function get_disconnect_url( $provider, $url ) {
-		$url = add_query_arg( array( 'wp-oauth2' => $provider, 'action' => 'disconnect' ), $url );
-
-		return $url;
+		return wp_nonce_url( add_query_arg( array( 'wp-oauth2' => $provider, 'action' => 'disconnect' ), $url ), 'wp-oauth-disconnect' );
 	}
 
 	public function disconnect( $provider ) {

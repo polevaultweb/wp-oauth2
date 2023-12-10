@@ -74,6 +74,10 @@ class AdminHandler {
 			return;
 		}
 
+		if ( ! check_admin_referer( 'wp-oauth-disconnect' ) ) {
+			return;
+		}
+
 		$this->token_manager->remove_access_token( $provider );
 
 		$this->redirect( 'disconnection', $provider );
