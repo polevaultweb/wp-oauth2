@@ -52,6 +52,10 @@ class AdminHandler {
 			return;
 		}
 
+		if ( ! check_admin_referer( 'wp-oauth-' . $notice ) ) {
+			return;
+		}
+
 		add_action( 'admin_notices', array( $this, 'render_' . $notice . '_notice' ) );
 	}
 
@@ -95,6 +99,8 @@ class AdminHandler {
 		), $args );
 
 		$url = add_query_arg( $args, apply_filters( 'pvw_wp_oauth2_redirect_url', $this->redirect ) );
+
+		$url = wp_nonce_url( $url, 'wp-oauth-' . $notice );
 
 		wp_redirect( $url );
 		exit;
