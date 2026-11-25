@@ -1,6 +1,6 @@
 <?php
 
-namespace Polevaultweb\WPOAuth2;
+namespace Polevaultweb\WPOAuth2\V3;
 
 class AccessToken extends AbstractAccessToken {
 

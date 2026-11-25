@@ -1,6 +1,6 @@
 <?php
 
-namespace Polevaultweb\WPOAuth2;
+namespace Polevaultweb\WPOAuth2\V3;
 
 class AdminHandler {
 
@@ -20,16 +20,23 @@ class AdminHandler {
 	protected $openssl_encrypt_method;
 
 	/**
+	 * @var string
+	 */
+	protected $instance_key;
+
+	/**
 	 * Admin_Handler constructor.
 	 *
 	 * @param TokenManager $token_manager
 	 * @param string       $redirect
 	 * @param string       $openssl_encrypt_method
+	 * @param string       $instance_key Key of the WPOAuth2 instance this handles callbacks for
 	 */
-	public function __construct( $token_manager, $redirect, $openssl_encrypt_method ) {
+	public function __construct( $token_manager, $redirect, $openssl_encrypt_method, $instance_key = WPOAuth2::DEFAULT_INSTANCE ) {
 		$this->token_manager          = $token_manager;
 		$this->redirect               = $redirect;
 		$this->openssl_encrypt_method = $openssl_encrypt_method;
+		$this->instance_key           = $instance_key;
 	}
 
 	public function init() {
@@ -43,11 +50,11 @@ class AdminHandler {
 			return;
 		}
 
-		if ( ! $this->is_callback_page() ) {
+		if ( ! $this->is_callback_page() || ! $this->is_for_this_instance() ) {
 			return;
 		}
 
-		$notice = filter_input( INPUT_GET, 'notice' );
+		$notice = $this->get_query_arg( 'notice' );
 		if ( empty( $notice ) ) {
 			return;
 		}
@@ -64,16 +71,16 @@ class AdminHandler {
 			return;
 		}
 
-		if ( ! $this->is_callback_page() ) {
+		if ( ! $this->is_callback_page() || ! $this->is_for_this_instance() ) {
 			return;
 		}
 
-		$provider = filter_input( INPUT_GET, 'wp-oauth2' );
+		$provider = $this->get_query_arg( 'wp-oauth2' );
 		if ( empty( $provider ) ) {
 			return;
 		}
 
-		$action = filter_input( INPUT_GET, 'action' );
+		$action = $this->get_query_arg( 'action' );
 		if ( empty( $action ) || 'disconnect' !== $action ) {
 			return;
 		}
@@ -94,20 +101,28 @@ class AdminHandler {
 	 */
 	protected function redirect( $notice = null, $provider = '', $args = array() ) {
 		$args = array_merge( array(
-			'notice'    => $notice,
-			'wp-oauth2' => $provider,
+			'notice'                     => $notice,
+			'wp-oauth2'                  => $provider,
+			WPOAuth2::INSTANCE_QUERY_ARG => $this->instance_key,
 		), $args );
 
-		$url = add_query_arg( $args, apply_filters( 'pvw_wp_oauth2_redirect_url', $this->redirect ) );
+		$url = add_query_arg( $args, $this->apply_filters( 'redirect_url', $this->redirect ) );
 
 		$url = wp_nonce_url( $url, 'wp-oauth-' . $notice );
 
+		$this->do_redirect( $url );
+	}
+
+	/**
+	 * @param string $url
+	 */
+	protected function do_redirect( $url ) {
 		wp_redirect( $url );
 		exit;
 	}
 
 	protected function is_callback_page() {
-		$parts = parse_url( apply_filters( 'pvw_wp_oauth2_is_callback_page_redirect_url', $this->redirect ) );
+		$parts = parse_url( $this->apply_filters( 'is_callback_page_redirect_url', $this->redirect ) );
 
 		global $pagenow;
 		if ( ! isset( $pagenow ) ) {
@@ -123,7 +138,7 @@ class AdminHandler {
 
 		parse_str( $parts['query'], $query );
 		foreach ( $query as $key => $value ) {
-			$param = filter_input( INPUT_GET, $key );
+			$param = $this->get_query_arg( $key );
 			if ( empty( $param ) ) {
 				return false;
 			}
@@ -136,88 +151,139 @@ class AdminHandler {
 		return true;
 	}
 
+	/**
+	 * Is the request for this instance, rather than another plugin's?
+	 *
+	 * URLs made before instances had their own keys don't say, so they are
+	 * handled by every instance whose callback page they're on, as they were.
+	 *
+	 * @return bool
+	 */
+	protected function is_for_this_instance() {
+		$instance_key = $this->get_query_arg( WPOAuth2::INSTANCE_QUERY_ARG );
+
+		return empty( $instance_key ) || $instance_key === $this->instance_key;
+	}
+
 	public function handle_redirect() {
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			return;
 		}
 
-		if ( ! $this->is_callback_page() ) {
+		if ( ! $this->is_callback_page() || ! $this->is_for_this_instance() ) {
 			return;
 		}
 
-		$provider = filter_input( INPUT_GET, 'wp-oauth2' );
+		$provider = $this->get_query_arg( 'wp-oauth2' );
 		if ( empty( $provider ) ) {
 			return;
 		}
 
-		$action = filter_input( INPUT_GET, 'action' );
+		$action = $this->get_query_arg( 'action' );
 		if ( empty( $action ) || 'connect' !== $action ) {
 			return;
 		}
 
-		$error = filter_input( INPUT_GET, 'error' );
+		$error = $this->get_query_arg( 'error' );
 		if ( $error ) {
 			$error_args = array( 'error' => $error );
 			// Show error notice
-			$error_desp = filter_input( INPUT_GET, 'error_description' );
+			$error_desp = $this->get_query_arg( 'error_description' );
 
 			if ( $error_desp ) {
 				$error_args['error_description'] = $error_desp;
 			}
 
 			$this->redirect( 'error', $provider, $error_args );
+			return;
 		}
 
-		$token = filter_input( INPUT_GET, 'token' );
-		$iv    = filter_input( INPUT_GET, 'iv' );
+		$token = $this->get_query_arg( 'token' );
+		$iv    = $this->get_query_arg( 'iv' );
 		if ( empty( $token ) || empty( $iv ) ) {
 			$this->redirect( 'error' );
+			return;
 		}
 
 		$method = $this->openssl_encrypt_method;
-		$keys   = get_site_transient( 'wp-oauth2-key' );
+		$keys   = get_site_transient( WPOAuth2::login_key_transient( $this->instance_key ) );
 		if ( ! isset( $keys[ $provider ] ) ) {
 			$this->redirect( 'error', $provider );
+			return;
 		}
 		$key   = $keys[ $provider ];
 		$token = openssl_decrypt( $token, $method, $key, 0, urldecode( $iv ) );
 		if ( empty( $token ) ) {
 			$this->redirect( 'error', $provider );
+			return;
 		}
 
-		$refresh_token_data = filter_input( INPUT_GET, 'refresh_token' );
+		$refresh_token_data = $this->get_query_arg( 'refresh_token' );
 		$refresh_token      = null;
 		if ( $refresh_token_data ) {
 			$refresh_token = openssl_decrypt( $refresh_token_data, $method, $key, 0, urldecode( $iv ) );
 		}
 
-		$values_data = filter_input( INPUT_GET, 'values' );
+		$values_data = $this->get_query_arg( 'values' );
 		$values      = null;
 		if ( $values_data ) {
 			$values = openssl_decrypt( $values_data, $method, $key, 0, urldecode( $iv ) );
 		}
 
-		$expires = filter_input( INPUT_GET, 'expires', FILTER_VALIDATE_INT );
+		$expires = $this->get_query_arg( 'expires', FILTER_VALIDATE_INT );
 
 		$this->token_manager->set_access_token( $provider, $token, $refresh_token, $expires, $values );
 
 		$this->redirect( 'connection', $provider );
 	}
 
+	/**
+	 * Read a query arg from the request.
+	 *
+	 * @param string $name
+	 * @param int    $filter
+	 *
+	 * @return mixed
+	 */
+	protected function get_query_arg( $name, $filter = FILTER_DEFAULT ) {
+		return filter_input( INPUT_GET, $name, $filter );
+	}
+
+	/**
+	 * Apply a filter for every instance, then the filter for this instance only.
+	 *
+	 * Both get the instance key as their last argument. 'pvw_wp_oauth2_{$hook}'
+	 * runs for every plugin's instance, as it did before instances had their own
+	 * filters, so a plugin should hook 'pvw_wp_oauth2_{$instance_key}_{$hook}'.
+	 *
+	 * @param string $hook  Eg. 'redirect_url'
+	 * @param mixed  $value
+	 * @param array  $args  Arguments after the value
+	 *
+	 * @return mixed
+	 */
+	protected function apply_filters( $hook, $value, $args = array() ) {
+		$args[] = $this->instance_key;
+
+		$value = call_user_func_array( 'apply_filters', array_merge( array( WPOAuth2::FILTER_PREFIX . $hook, $value ), $args ) );
+
+		return call_user_func_array( 'apply_filters', array_merge( array( WPOAuth2::filter_name( $this->instance_key, $hook ), $value ), $args ) );
+	}
+
 	protected function get_provider_display_name() {
-		$provider = filter_input( INPUT_GET, 'wp-oauth2' );
+		$provider = $this->get_query_arg( 'wp-oauth2' );
 		$name = ucwords( str_replace( array( '_', '-' ), ' ', $provider ) );
 
-		return apply_filters( 'pvw_wp_oauth2_provider_display_name' , $name, $provider );
+		return $this->apply_filters( 'provider_display_name', $name, array( $provider ) );
 	}
 
 	public function render_error_notice() {
 		$provider = $this->get_provider_display_name();
 
-		$error_description = filter_input( INPUT_GET, 'error_description' );
+		$error_description = $this->get_query_arg( 'error_description' );
 		$message           = $error_description ? $error_description : __( 'An unknown error occurred.' );
-		$message           = apply_filters( 'pvw_wp_oauth2_error_notice_message', $message, $provider );
-		$class             = apply_filters( 'pvw_wp_oauth2_error_notice_class', 'error', $provider );
+		$message           = $this->apply_filters( 'error_notice_message', $message, array( $provider ) );
+		$class             = $this->apply_filters( 'error_notice_class', 'error', array( $provider ) );
 
 		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connection Error' ), esc_html( $message ) );
 	}
@@ -226,7 +292,7 @@ class AdminHandler {
 		$provider = $this->get_provider_display_name();
 
 		$message = sprintf( __( 'You have successfully connected with your %s account.' ), $provider );
-		$class = apply_filters( 'pvw_wp_oauth2_connection_notice_class', 'updated' );
+		$class = $this->apply_filters( 'connection_notice_class', 'updated' );
 		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Connected' ), $message );
 	}
 
@@ -234,7 +300,7 @@ class AdminHandler {
 		$provider = $this->get_provider_display_name();
 
 		$message = sprintf( __( 'You have successfully disconnected your %s account.' ), $provider );
-		$class = apply_filters( 'pvw_wp_oauth2_disconnection_notice_class', 'updated' );
+		$class = $this->apply_filters( 'disconnection_notice_class', 'updated' );
 		printf( '<div class="' . $class . '"><p><strong>' . $provider . ' %s</strong> &mdash; %s</p></div>', __( 'Disconnected' ), $message );
 	}
 }

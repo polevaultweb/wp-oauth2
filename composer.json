@@ -10,7 +10,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Polevaultweb\\WPOAuth2\\": "src/"
+      "Polevaultweb\\WPOAuth2\\V3\\": "src/"
     }
   }
 }
